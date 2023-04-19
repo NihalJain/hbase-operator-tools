@@ -30,9 +30,9 @@ the repair tool that shipped with _hbase-1.x_ (A.K.A _hbck1_).  Use _HBCK2_ in p
 _hbck1_ making repairs against hbase-2.x clusters. _hbck1_ should not be run against an
 hbase-2.x install. It may do damage. While _hbck1_ is still bundled inside hbase-2.x
 -- to minimize surprise -- it is deprecated, to be removed in _hbase-3.x_. Its
-write-facility (`-fix`) has been removed. It can report on the state of an hbase-2.x
+write-facility (`-fix`) has been removed. It can report on the state of a hbase-2.x
 cluster but its assessments will be inaccurate since it does not understand the internal
-workings of an hbase-2.x.
+workings of hbase-2.x.
 
 _HBCK2_ does not work the way _hbck1_ used to, even for the case where commands are
 similarly named across the two versions. See the next section for how the tools
@@ -65,8 +65,8 @@ The built _HBCK2_ jar will be in the `target` sub-directory.
 ## Running _HBCK2_
 The _HBCK2_ jar does not include dependencies; it is not built as a 'fat' jar.
 Dependencies must be `provided`. Building, adjusting the target hbase version in the
-top-level pom to match your deploy will make for the smoothest operation when run
-against your deploy (See the parent pom.xml `hbase-operator-tools` for the
+top-level pom to match your deployment will make for the smoothest operation when run
+against your deployment (See the parent pom.xml `hbase-operator-tools` for the
 [hbase.version to set](https://github.com/apache/hbase-operator-tools/blob/master/pom.xml#L126)).
 
 Where runtime interaction between _HBCK2_ and running cluster can get interesting is
@@ -83,9 +83,9 @@ as in:
 ~~~~
  $  ${HBASE_HOME}/bin/hbase --config /etc/hbase-conf hbck -j ~/hbase-operator-tools/hbase-hbck2/target/hbase-hbck2-1.0.0-SNAPSHOT.jar
 ~~~~
-where in the above, `/etc/hbase-conf` is where the deploy's configuration lives.
-The _HBCK2_ jar is at
-`~/hbase-operator-tools/hbase-hbck2/target/hbase-hbck2-1.0.0-SNAPSHOT.jar`.
+where `/etc/hbase-conf` is assumed to be the path where the hbase configuration directory of the deployment resides.
+Also, the _HBCK2_ jar is assumed to be at
+`~/hbase-operator-tools/hbase-hbck2/target/hbase-hbck2-1.0.0-SNAPSHOT.jar`. Please change these values appropriately based on your deployment.
 The above command with no options or arguments passed will dump out the _HBCK2_ help:
 ```
 usage: HBCK2 [OPTIONS] COMMAND <ARGS>
@@ -376,7 +376,7 @@ install and then it will load its HDFS jars.
 ## _HBCK2_ Overview
 _HBCK2_ is currently a simple tool that does one thing at a time only.
 
-In hbase-2.x, the Master is the final arbiter of all state, so a general principal for most
+In hbase-2.x, the Master is the final arbiter of all state, so a general principle for most
 _HBCK2_ commands is that it asks the Master to effect all repair. This means a Master must be
 up before you can run _HBCK2_ commands.
 
@@ -398,7 +398,7 @@ a section on how you 'fix' found problems.
 ## Finding Problems
 
 While _hbck1_ performed analysis reporting your cluster GOOD or BAD, _HBCK2_
-is less presumptious. In hbase-2.x, the operator figures what needs fixing and
+is less presumptuous. In hbase-2.x, the operator figures what needs fixing and
 then uses tooling including _HBCK2_ to do fixup. The operator may have to go
 a few rounds of back and forth running _HBCK2_ then checking cluster state.
 
@@ -459,7 +459,7 @@ filled with lists of Procedures and Locks. The count of
 MasterProcWALs will bloat too. If after the cluster settles,
 there is a stuck Lock or Procedure or the count of WALs
 doesn't ever come down but only grows, then operator intervention
-is needed to alieve the blockage.
+is needed to remove the blockage.
 
 Lists of locks and procedures can also be obtained via the hbase shell:
 
@@ -530,7 +530,7 @@ can do bulk assigning.
 
 ## Fixing Problems
 
-### Some General Principals
+### Some General Principles
 When making repair, make sure hbase:meta is consistent first
 before you go about fixing any other issue type such as a filesystem
 deviance. Deviance in the filesystem or problems with assign should
@@ -538,7 +538,7 @@ be addressed after the hbase:meta has been put in order. If hbase:meta
 is out of whack, the Master cannot make proper placements when adopting orphan
 filesystem data or making region assignments.
 
-Other general principals to keep in mind include a Region can not be assigned if
+Other general principles to keep in mind include a Region can not be assigned if
 it is in _CLOSING_ state (or the inverse, unassigned if in _OPENING_ state) without
 first transitioning via _CLOSED_: Regions must always move from _CLOSED_, to _OPENING_,
 to _OPEN_, and then to _CLOSING_, _CLOSED_.
@@ -559,7 +559,7 @@ _HBCK2_ usage output.
 
 What follows is a mix of notes and prescription that comes of experience running hbase-2.x so far.
 The root issues that brought on states described below has been fixed in later versions of hbase
-so upgrade if you can so as to avoid secenarios described.
+so upgrade if you can so as to avoid scenarios described.
 
 ### Assigning/Unassigning
 
@@ -582,10 +582,10 @@ The Master is unable to continue startup because there is no Procedure to assign
 _hbase:meta_ (or _hbase:namespace_). To inject one, use the _HBCK2_ tool:
 
 ```
-HBASE_CLASSPATH_PREFIX=./hbase-hbck2-1.0.0-SNAPSHOT.jar hbase org.apache.hbase.HBCK2 assigns -skip 1588230740
+HBASE_CLASSPATH_PREFIX=./hbase-hbck2-1.0.0-SNAPSHOT.jar hbase org.apache.hbase.HBCK2 -skip assigns 1588230740
 ```
 ...where 1588230740 is the encoded name of the _hbase:meta_ Region. Pass the '-skip' option to
-stop HBCK2 doing a verstion check against the remote master. If the remote master is not up,
+stop HBCK2 doing a version check against the remote master. If the remote master is not up,
 the version check will prompt a 'Master is initializing response' or 'PleaseHoldException'
 and drop the assign attempt. The '-skip' command punts on version check and will land the
 scheduled assign.
@@ -601,7 +601,7 @@ prints out a helpful message that looks like the following:
 
 To schedule an assign for the hbase:namespace table noted in the above log line, you would do:
 ```
- $ ${HBASE_HOME}/bin/hbase --config /etc/hbase-conf hbck -j ./hbase-hbck2-1.0.0-SNAPSHOT.jar hbase -skip assigns 9559cf72b8e81e1291c626a8e781a6ae
+ $ ${HBASE_HOME}/bin/hbase --config /etc/hbase-conf hbck -j ./hbase-hbck2-1.0.0-SNAPSHOT.jar -skip assigns 9559cf72b8e81e1291c626a8e781a6ae
 ```
 ... passing the encoded name for the namespace region (the encoded name will differ per deploy).
 
@@ -647,7 +647,7 @@ echo "scan 'hbase:meta', {COLUMN=>'info:regioninfo'}" | hbase shell
 _HBCK2_ _addFsRegionsMissingInMeta_ can be used if the above does not show any errors. It reads region
 metadata info available on the FS region directories in order to recreate regions
 in hbase:meta. Since it can run with hbase partially operational, it attempts to disable online tables
-that are affected by the reported problem and it is going to readd regions to _hbase:meta_.
+that are affected by the reported problem and it is going to read regions to _hbase:meta_.
 It can check for specific tables/namespaces, or all tables from all namespaces.
 An example below shows adding missing regions for tables 'tbl_1' in the default namespace,
 'tbl_2' in namespace 'n1', and for all tables from namespace 'n2':
